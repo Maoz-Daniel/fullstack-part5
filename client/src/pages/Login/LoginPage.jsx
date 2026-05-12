@@ -1,30 +1,105 @@
-import { useNavigate } from 'react-router-dom'
-import { AuthCard } from '../../components/ui/AuthCard.jsx'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
-
-const DEMO_USER = {
-  id: '1',
-  username: 'Bret',
-  name: 'Leanne Graham',
-}
+import { getUserByUsername } from '../../services/authService.js'
+import { validateLoginValues } from './validation.js'
 
 function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
-  function handleCreateDemoSession() {
-    login(DEMO_USER)
-    navigate('/home')
+  async function handleSubmit(event) {
+    event.preventDefault()
+
+    const validationError = validateLoginValues({ username, password })
+
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    try {
+      const user = await getUserByUsername(username.trim()) 
+
+      if (!user || user.website !== password) {
+        setError('Invalid username or password.')
+        return
+      }
+
+      login(user)
+      navigate('/home')
+    } catch {
+      setError('Login failed. Please try again.')
+    }
   }
 
   return (
-    <AuthCard
-      title="Login route is ready"
-      path="/login"
-      description="This is a placeholder screen for the architecture step. The real login form and server validation will come in the auth stage."
-      actionLabel="Create demo session"
-      onAction={handleCreateDemoSession}
-    />
+    <section className="panel panel--public">
+      <div className="panel__eyebrow">Public Route</div>
+      <h1 className="panel__title">Login</h1>
+      <p className="panel__subtitle">
+        Enter your username and website password to open your session.
+      </p>
+
+      <dl className="details-list">
+        <div className="details-list__row">
+          <dt>Path</dt>
+          <dd>/login</dd>
+        </div>
+        <div className="details-list__row">
+          <dt>Guard</dt>
+          <dd>Redirects to /home if a session exists in localStorage.</dd>
+        </div>
+      </dl>
+
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <label className="auth-form__field">
+          <span className="auth-form__label">Username</span>
+          <input
+            className="auth-form__input"
+            type="text"
+            name="username"
+            value={username}
+            onChange={(event) => {
+              setUsername(event.target.value)
+              if (error) {
+                setError('')
+              }
+            }}
+          />
+        </label>
+
+        <label className="auth-form__field">
+          <span className="auth-form__label">Password</span>
+          <input
+            className="auth-form__input"
+            type="password"
+            name="password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value)
+              if (error) {
+                setError('')
+              }
+            }}
+          />
+        </label>
+
+        {error ? <p className="auth-form__error">{error}</p> : null}
+
+        <div className="button-row">
+          <button type="submit" className="button">
+            Login
+          </button>
+          <Link className="button button--ghost" to="/register">
+            Go to /register
+          </Link>
+        </div>
+      </form>
+    </section>
   )
 }
 

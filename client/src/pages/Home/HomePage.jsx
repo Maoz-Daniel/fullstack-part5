@@ -1,42 +1,68 @@
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useOutletContext, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth.js'
 
 function HomePage() {
+  const navigate = useNavigate()
+  const user = useOutletContext()
+  const { logout } = useAuth()
   const [searchParams] = useSearchParams()
-  const activePanel = searchParams.get('panel') ?? 'default'
+  const activePanel = searchParams.get('panel')
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
-    <section className="panel">
-      <div className="panel__eyebrow">Route Placeholder</div>
-      <h1 className="panel__title">Home route is ready</h1>
-      <p className="panel__subtitle">
-        This protected page is now owned by `pages/Home` and keeps the query-string contract for
-        the future info panel.
-      </p>
+    <section>
+      <h1 className="panel__title">{user.name}</h1>
+      <p className="panel__subtitle">Choose what you want to open next from the protected area.</p>
 
-      <dl className="details-list">
-        <div className="details-list__row">
-          <dt>Path</dt>
-          <dd>{activePanel === 'default' ? '/home' : `/home?panel=${activePanel}`}</dd>
-        </div>
-        <div className="details-list__row">
-          <dt>Panel</dt>
-          <dd>{activePanel}</dd>
-        </div>
-      </dl>
-
-      <ul className="hint-list">
-        <li>The info view stays addressable at `/home?panel=info`.</li>
-        <li>Protected routing is still enforced before this page renders.</li>
-      </ul>
-
-      <div className="button-row">
-        <Link className="button" to="/home?panel=info">
-          Open info panel route
+      <nav className="button-row" aria-label="Home actions">
+        <Link className={activePanel === 'info' ? 'button' : 'button button--ghost'} to="/home?panel=info">
+          Info
         </Link>
-        <Link className="button button--ghost" to="/home">
-          Reset to /home
+        <Link className="button button--ghost" to="/todos">
+          Todos
         </Link>
-      </div>
+        <Link className="button button--ghost" to="/posts">
+          Posts
+        </Link>
+        <Link className="button button--ghost" to="/albums">
+          Albums
+        </Link>
+        <button type="button" className="button button--ghost" onClick={handleLogout}>
+          Logout
+        </button>
+      </nav>
+
+      {activePanel === 'info' ? (
+        <section className="home-info">
+          <h2 className="home-info__title">Info</h2>
+          <dl className="details-list">
+            <div className="details-list__row">
+              <dt>Full name</dt>
+              <dd>{user.name}</dd>
+            </div>
+            <div className="details-list__row">
+              <dt>Username</dt>
+              <dd>{user.username}</dd>
+            </div>
+            <div className="details-list__row">
+              <dt>Email</dt>
+              <dd>{user.email}</dd>
+            </div>
+            <div className="details-list__row">
+              <dt>Phone</dt>
+              <dd>{user.phone}</dd>
+            </div>
+            <div className="details-list__row">
+              <dt>Website</dt>
+              <dd>{user.website}</dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
     </section>
   )
 }

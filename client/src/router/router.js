@@ -9,10 +9,14 @@ import { PostsPage } from '../pages/Posts/PostsPage.jsx'
 import { RegisterPage } from '../pages/Register/RegisterPage.jsx'
 import { TodosPage } from '../pages/Todos/TodosPage.jsx'
 import {
+  albumPhotosLoader,
+  albumsLoader,
   authLandingLoader,
+  postDetailsLoader,
+  postsLoader,
   publicOnlyLoader,
   requireAuthLoader,
-  requireMatchingUserLoader,
+  todosLoader,
 } from './loaders.js'
 import { ProtectedLayout } from './ProtectedLayout.jsx'
 import { RootLayout } from './RootLayout.jsx'
@@ -52,24 +56,27 @@ export const router = createBrowserRouter([
           },
           {
             path: 'todos',
+            loader: todosLoader,
             element: createElement(TodosPage),
           },
           {
             path: 'posts',
+            loader: postsLoader,
             element: createElement(PostsPage),
           },
           {
             path: 'albums',
+            loader: albumsLoader,
             element: createElement(AlbumsPage),
           },
           {
             path: 'users/:userId/posts/:postId',
-            loader: requireMatchingUserLoader,
+            loader: postDetailsLoader,
             element: createElement(PostDetailsPage),
           },
           {
             path: 'users/:userId/albums/:albumId/photos',
-            loader: requireMatchingUserLoader,
+            loader: albumPhotosLoader,
             element: createElement(AlbumPhotosPage),
           },
         ],
