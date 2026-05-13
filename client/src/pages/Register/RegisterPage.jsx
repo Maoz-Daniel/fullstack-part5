@@ -74,7 +74,7 @@ function RegisterPage() {
 
   return (
     <section className="panel panel--public">
-      <div className="panel__eyebrow">Public Route</div>
+      <div className="panel__eyebrow">Create your account</div>
       <h1 className="panel__title">Register</h1>
       <p className="panel__subtitle">
         Create a new user in two steps, then open a session and continue to /home.

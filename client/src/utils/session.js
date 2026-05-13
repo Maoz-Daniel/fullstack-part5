@@ -1,7 +1,7 @@
 export const STORAGE_KEY = 'loggedInUser'
 
-function hasStringId(user) { // checks the user exist , and that he has a String id.
-  return Boolean(user && typeof user === 'object' && typeof user.id === 'string')
+function hasNumericId(user) { // checks the user exist , and that he has a numeric id.
+  return Boolean(user && typeof user === 'object' && typeof user.id === 'number' && Number.isFinite(user.id))
 }
 
 function buildSessionUser(user) {
@@ -11,7 +11,7 @@ function buildSessionUser(user) {
 }
 
 export function sanitizeSessionUser(user) { // return the user if he is OK
-  return hasStringId(user) ? user : null
+  return hasNumericId(user) ? user : null
 }
 
 export function readSessionUser() { 
@@ -32,7 +32,7 @@ export function writeSessionUser(user) {
   const sanitizedUser = sanitizeSessionUser(user) //check if the user is OK
 
   if (!sanitizedUser) {
-    throw new Error('A session user must be an object with a string id.')
+    throw new Error('A session user must be an object with a numeric id.')
   }
 
   const sessionUser = buildSessionUser(sanitizedUser)

@@ -4,7 +4,8 @@ function buildUrl(path) {
   return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
 }
 
-export async function apiClient(path, method = 'GET', body = null) {
+export async function apiClient(path, method = 'GET', body = null, config = {}) {
+  const { includeHeaders = false } = config 
   const options = {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : {},
@@ -18,7 +19,13 @@ export async function apiClient(path, method = 'GET', body = null) {
       throw new Error(`${method} ${path} failed: ${response.status}`)
     }
 
-    return method === 'DELETE' ? null : await response.json()
+    const data = method === 'DELETE' ? null : await response.json()
+
+    if (includeHeaders) {
+      return { data, headers: response.headers }
+    }
+
+    return data
   } catch (error) {
     console.error('API error:', error)
     throw error

@@ -2,19 +2,38 @@ import { apiClient } from './apiClient.js'
 
 export const PHOTO_BATCH_SIZE = 6
 
+function parseNextPage(headers) {
+  const linkHeader = headers.get('Link')
+
+  if (!linkHeader) {
+    return null
+  }
+
+  const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
+
+  if (!nextMatch) {
+    return null
+  }
+
+  const nextUrl = new URL(nextMatch[1])
+  const nextPage = Number(nextUrl.searchParams.get('_page'))
+
+  return Number.isNaN(nextPage) ? null : nextPage
+}
+
 function normalizeAlbum(album) {
   return {
     ...album,
-    id: String(album.id),
-    userId: String(album.userId),
+    id: Number(album.id),
+    userId: Number(album.userId),
   }
 }
 
 function normalizePhoto(photo) {
   return {
     ...photo,
-    id: String(photo.id),
-    albumId: String(photo.albumId),
+    id: Number(photo.id),
+    albumId: Number(photo.albumId),
   }
 }
 
@@ -34,11 +53,13 @@ export async function getAlbumById(albumId) {
 }
 
 export async function getAlbumPhotosBatch(albumId, page, perPage = PHOTO_BATCH_SIZE) {
-  const response = await apiClient(`/photos?albumId=${albumId}&_page=${page}&_per_page=${perPage}`)
+  const response = await apiClient(`/photos?albumId=${albumId}&_page=${page}&_limit=${perPage}`, 'GET', null, {
+    includeHeaders: true,
+  })
 
   return {
-    ...response,
     data: response.data.map(normalizePhoto),
+    next: parseNextPage(response.headers),
   }
 }
 

@@ -36,12 +36,13 @@ export function requireAuthLoader() {
 
 export function requireMatchingUserLoader({ params }) {
   const user = getUser()
+  const routeUserId = Number(params.userId)
 
   if (!user) {
     return redirect('/login')
   }
 
-  if (params.userId !== user.id) {
+  if (!Number.isFinite(routeUserId) || routeUserId !== user.id) {
     return redirect('/home')
   }
 
@@ -74,18 +75,24 @@ export async function postsLoader() {
 
 export async function postDetailsLoader({ params }) {
   const user = getUser()
+  const routePostId = Number(params.postId)
+  const routeUserId = Number(params.userId)
 
   if (!user) {
     return redirect('/login')
   }
 
-  const post = await getPostById(params.postId)
-
-  if (String(post.userId) !== params.userId) {
+  if (!Number.isFinite(routePostId) || !Number.isFinite(routeUserId)) {
     return redirect('/posts')
   }
 
-  const comments = await getCommentsByPostId(params.postId)
+  const post = await getPostById(routePostId)
+
+  if (post.userId !== routeUserId) {
+    return redirect('/posts')
+  }
+
+  const comments = await getCommentsByPostId(routePostId)
 
   return { user, post, comments }
 }
@@ -104,16 +111,22 @@ export async function albumsLoader() {
 
 export async function albumPhotosLoader({ params }) {
   const user = getUser()
+  const routeUserId = Number(params.userId)
+  const routeAlbumId = Number(params.albumId)
 
   if (!user) {
     return redirect('/login')
   }
 
-  if (params.userId !== user.id) {
+  if (!Number.isFinite(routeUserId) || routeUserId !== user.id) {
     return redirect('/albums')
   }
 
-  const album = await getAlbumById(params.albumId)
+  if (!Number.isFinite(routeAlbumId)) {
+    return redirect('/albums')
+  }
+
+  const album = await getAlbumById(routeAlbumId)
 
   if (album.userId !== user.id) {
     return redirect('/albums')

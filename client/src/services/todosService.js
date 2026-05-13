@@ -1,10 +1,10 @@
 import { apiClient } from './apiClient.js'
 
-function normalizeTodo(todo) { // the API returns numeric IDs, but we want them as strings for consistency with our user IDs
+function normalizeTodo(todo) {
   return {
     ...todo,
-    id: String(todo.id),
-    userId: String(todo.userId),
+    id: Number(todo.id),
+    userId: Number(todo.userId),
   }
 }
 
@@ -15,7 +15,7 @@ export async function getTodosByUserId(userId) {
 
 export async function createTodo(userId, title) {
   const todo = await apiClient('/todos', 'POST', {
-    userId: Number(userId),
+    userId,
     title,
     completed: false,
   })

@@ -1,11 +1,12 @@
 import { Outlet, useLoaderData } from 'react-router-dom'
+import { ProtectedNavigation } from '../components/ui/ProtectedNavigation.jsx'
 
 function ProtectedLayout() {
   const user = useLoaderData()
 
   return (
     <section className="panel">
-      <div className="panel__eyebrow">Protected App Shell</div>
+      <ProtectedNavigation />
       <Outlet context={user} />
     </section>
   )

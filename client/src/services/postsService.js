@@ -3,17 +3,17 @@ import { apiClient } from './apiClient.js'
 function normalizePost(post) {
   return {
     ...post,
-    id: String(post.id),
-    userId: String(post.userId),
+    id: Number(post.id),
+    userId: Number(post.userId),
   }
 }
 
 function normalizeComment(comment) {
   return {
     ...comment,
-    id: String(comment.id),
-    postId: String(comment.postId),
-    userId: String(comment.userId),
+    id: Number(comment.id),
+    postId: Number(comment.postId),
+    userId: Number(comment.userId),
   }
 }
 

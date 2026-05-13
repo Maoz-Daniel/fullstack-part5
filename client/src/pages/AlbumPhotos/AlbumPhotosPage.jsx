@@ -128,8 +128,8 @@ function AlbumPhotosPage() {
 
   return (
     <section>
-      <div className="button-row">
-        <Link className="button button--ghost" to="/albums">
+      <div className="button-row album-photos__back">
+        <Link className="button button--ghost back-link" to="/albums">
           Back to /albums
         </Link>
       </div>

@@ -18,7 +18,6 @@ export const INITIAL_FORM_DATA = {
 
 export function buildUserPayload(formData) {
   return {
-    id: String(Date.now()),
     name: formData.name.trim(),
     username: formData.username.trim(),
     email: formData.email.trim(),

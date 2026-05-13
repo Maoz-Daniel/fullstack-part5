@@ -38,22 +38,11 @@ function LoginPage() {
 
   return (
     <section className="panel panel--public">
-      <div className="panel__eyebrow">Public Route</div>
+      <div className="panel__eyebrow">Welcome back</div>
       <h1 className="panel__title">Login</h1>
       <p className="panel__subtitle">
         Enter your username and website password to open your session.
       </p>
-
-      <dl className="details-list">
-        <div className="details-list__row">
-          <dt>Path</dt>
-          <dd>/login</dd>
-        </div>
-        <div className="details-list__row">
-          <dt>Guard</dt>
-          <dd>Redirects to /home if a session exists in localStorage.</dd>
-        </div>
-      </dl>
 
       <form className="auth-form" onSubmit={handleSubmit}>
         <label className="auth-form__field">

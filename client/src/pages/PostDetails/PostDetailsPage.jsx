@@ -81,9 +81,9 @@ function PostDetailsPage() {
   }
 
   return (
-    <section>
-      <div className="button-row">
-        <Link className="button button--ghost" to="/posts">
+    <section className="post-details">
+      <div className="button-row post-details__back">
+        <Link className="button button--ghost back-link" to="/posts">
           Back to /posts
         </Link>
       </div>
@@ -100,11 +100,11 @@ function PostDetailsPage() {
           Commenting as {user.name} ({user.email})
         </p>
 
-        <form className="auth-form" onSubmit={handleAddComment}>
+        <form className="auth-form comments-composer" onSubmit={handleAddComment}>
           <label className="auth-form__field">
             <span className="auth-form__label">Add comment</span>
             <textarea
-              className="auth-form__input auth-form__textarea"
+              className="auth-form__input auth-form__textarea comments-composer__textarea"
               value={newCommentBody}
               onChange={(event) => {
                 setNewCommentBody(event.target.value)
@@ -139,7 +139,7 @@ function PostDetailsPage() {
 
                   {editingCommentId === comment.id ? (
                     <textarea
-                      className="auth-form__input auth-form__textarea"
+                      className="auth-form__input auth-form__textarea comments-composer__textarea"
                       value={editingCommentBody}
                       onChange={(event) => setEditingCommentBody(event.target.value)}
                     />
