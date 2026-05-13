@@ -5,6 +5,7 @@ import {
   deletePost,
   updatePost,
 } from '../../services/postsService.js'
+import { getVisiblePosts } from './helpers.js'
 
 function PostsPage() {
   const { user, posts: initialPosts } = useLoaderData()
@@ -19,15 +20,7 @@ function PostsPage() {
   const [editingBody, setEditingBody] = useState('')
   const [error, setError] = useState('')
 
-  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
-  const basePosts = viewMode === 'mine' ? posts.filter((post) => post.userId === user.id) : posts
-  const visiblePosts = basePosts.filter((post) => {
-    if (!normalizedSearchTerm) {
-      return true
-    }
-
-    return `${post.id} ${post.title}`.toLowerCase().includes(normalizedSearchTerm)
-  })
+  const visiblePosts = getVisiblePosts(posts, user.id, viewMode, searchTerm)
 
   async function handleCreatePost(event) {
     event.preventDefault()

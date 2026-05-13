@@ -56,10 +56,6 @@ function HomePage() {
               <dt>Phone</dt>
               <dd>{user.phone}</dd>
             </div>
-            <div className="details-list__row">
-              <dt>Website</dt>
-              <dd>{user.website}</dd>
-            </div>
           </dl>
         </section>
       ) : null}

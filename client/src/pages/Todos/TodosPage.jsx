@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLoaderData } from 'react-router-dom'
 import { createTodo, deleteTodo, updateTodo } from '../../services/todosService.js'
+import { getVisibleTodos } from './helpers.js'
 
 function TodosPage() {
   const { user, todos: initialTodos } = useLoaderData() // get the user and the todos from the loader data
@@ -12,30 +13,7 @@ function TodosPage() {
   const [editingTitle, setEditingTitle] = useState('') // the new title of the todo that is being edited
   const [error, setError] = useState('')
 
-  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
-
-  const visibleTodos = [...todos] 
-    .filter((todo) => { // check if the term appears in any of the todo's fields (id, title, completed state)
-      if (!normalizedSearchTerm) {
-        return true
-      }
-
-      const completedLabel = todo.completed ? 'completed true' : 'not completed false'
-      const fullString = `${todo.id} ${todo.title} ${completedLabel}`.toLowerCase()
-
-      return fullString.includes(normalizedSearchTerm)
-    })
-    .sort((leftTodo, rightTodo) => { // sort the todos based on the selected field
-      if (sortBy === 'title') {
-        return leftTodo.title.localeCompare(rightTodo.title) // compare the titles in a case-insensitive way
-      }
-
-      if (sortBy === 'completed') {
-        return Number(leftTodo.completed) - Number(rightTodo.completed)
-      }
-
-      return Number(leftTodo.id) - Number(rightTodo.id)
-    })
+  const visibleTodos = getVisibleTodos(todos, searchTerm, sortBy)
 
   async function handleAddTodo(event) {
     event.preventDefault() 

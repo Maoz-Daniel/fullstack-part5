@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLoaderData } from 'react-router-dom'
 import { createAlbum } from '../../services/albumsService.js'
+import { getVisibleAlbums } from './helpers.js'
 
 function AlbumsPage() {
   const { user, albums: initialAlbums } = useLoaderData()
@@ -9,14 +10,7 @@ function AlbumsPage() {
   const [newTitle, setNewTitle] = useState('')
   const [error, setError] = useState('')
 
-  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
-  const visibleAlbums = albums.filter((album) => {
-    if (!normalizedSearchTerm) {
-      return true
-    }
-
-    return `${album.id} ${album.title}`.toLowerCase().includes(normalizedSearchTerm)
-  })
+  const visibleAlbums = getVisibleAlbums(albums, searchTerm)
 
   async function handleCreateAlbum(event) {
     event.preventDefault()

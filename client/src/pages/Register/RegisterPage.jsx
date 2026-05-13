@@ -2,54 +2,11 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import { createUser, getUserByUsername } from '../../services/authService.js'
+import { buildUserPayload, INITIAL_FORM_DATA } from './helpers.js'
 import {
   validateRegisterAccountStep,
   validateRegisterProfileStep,
 } from './validation.js'
-
-const INITIAL_FORM_DATA = {
-  username: '',
-  password: '',
-  verifyPassword: '',
-  name: '',
-  email: '',
-  phone: '',
-  street: '',
-  suite: '',
-  city: '',
-  zipcode: '',
-  lat: '',
-  lng: '',
-  companyName: '',
-  companyCatchPhrase: '',
-  companyBs: '',
-}
-
-function buildUserPayload(formData) {
-  return {
-    id: String(Date.now()),
-    name: formData.name.trim(),
-    username: formData.username.trim(),
-    email: formData.email.trim(),
-    phone: formData.phone.trim(),
-    website: formData.password,
-    address: {
-      street: formData.street.trim(),
-      suite: formData.suite.trim(),
-      city: formData.city.trim(),
-      zipcode: formData.zipcode.trim(),
-      geo: {
-        lat: formData.lat.trim(),
-        lng: formData.lng.trim(),
-      },
-    },
-    company: {
-      name: formData.companyName.trim(),
-      catchPhrase: formData.companyCatchPhrase.trim(),
-      bs: formData.companyBs.trim(),
-    },
-  }
-}
 
 function RegisterPage() {
   const navigate = useNavigate()

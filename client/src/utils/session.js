@@ -4,6 +4,12 @@ function hasStringId(user) { // checks the user exist , and that he has a String
   return Boolean(user && typeof user === 'object' && typeof user.id === 'string')
 }
 
+function buildSessionUser(user) {
+  const sessionUser = { ...user }
+  delete sessionUser.website // remove the password from the session user object for security reasons
+  return sessionUser
+}
+
 export function sanitizeSessionUser(user) { // return the user if he is OK
   return hasStringId(user) ? user : null
 }
@@ -29,8 +35,10 @@ export function writeSessionUser(user) {
     throw new Error('A session user must be an object with a string id.')
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizedUser)) //store the user in localStorage
-  return sanitizedUser
+  const sessionUser = buildSessionUser(sanitizedUser)
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionUser)) //store the user in localStorage
+  return sessionUser
 }
 
 export function clearSessionUser() { 

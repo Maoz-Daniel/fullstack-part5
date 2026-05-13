@@ -6,6 +6,12 @@ import {
   getAlbumPhotosBatch,
   updatePhoto,
 } from '../../services/albumsService.js'
+import {
+  buildNewPhotoPayload,
+  buildUpdatedPhotoPayload,
+  mergePhotos,
+  validatePhotoFields,
+} from './helpers.js'
 
 function AlbumPhotosPage() {
   const { user, album, photos: initialPhotos, nextPage: initialNextPage } = useLoaderData()
@@ -20,12 +26,6 @@ function AlbumPhotosPage() {
   const [editingThumbnailUrl, setEditingThumbnailUrl] = useState('')
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState('')
-
-  function mergePhotos(currentPhotos, incomingPhotos) {
-    const seenIds = new Set(currentPhotos.map((photo) => photo.id))
-    const uniqueIncoming = incomingPhotos.filter((photo) => !seenIds.has(photo.id))
-    return [...currentPhotos, ...uniqueIncoming]
-  }
 
   async function handleLoadMore() {
     if (!nextPage) {
@@ -50,28 +50,17 @@ function AlbumPhotosPage() {
   async function handleAddPhoto(event) {
     event.preventDefault()
 
-    if (!newTitle.trim()) {
-      setError('Photo title is required.')
-      return
-    }
+    const validationError = validatePhotoFields(newTitle, newUrl, newThumbnailUrl)
 
-    if (!newUrl.trim()) {
-      setError('Photo URL is required.')
-      return
-    }
-
-    if (!newThumbnailUrl.trim()) {
-      setError('Thumbnail URL is required.')
+    if (validationError) {
+      setError(validationError)
       return
     }
 
     try {
-      const createdPhoto = await createPhoto({
-        albumId: album.id,
-        title: newTitle.trim(),
-        url: newUrl.trim(),
-        thumbnailUrl: newThumbnailUrl.trim(),
-      })
+      const createdPhoto = await createPhoto(
+        buildNewPhotoPayload(album.id, newTitle, newUrl, newThumbnailUrl),
+      )
 
       setPhotos((currentPhotos) => [createdPhoto, ...currentPhotos])
       setNewTitle('')
@@ -99,27 +88,18 @@ function AlbumPhotosPage() {
   }
 
   async function handleSaveEdit(photoId) {
-    if (!editingTitle.trim()) {
-      setError('Photo title is required.')
-      return
-    }
+    const validationError = validatePhotoFields(editingTitle, editingUrl, editingThumbnailUrl)
 
-    if (!editingUrl.trim()) {
-      setError('Photo URL is required.')
-      return
-    }
-
-    if (!editingThumbnailUrl.trim()) {
-      setError('Thumbnail URL is required.')
+    if (validationError) {
+      setError(validationError)
       return
     }
 
     try {
-      const updatedPhoto = await updatePhoto(photoId, {
-        title: editingTitle.trim(),
-        url: editingUrl.trim(),
-        thumbnailUrl: editingThumbnailUrl.trim(),
-      })
+      const updatedPhoto = await updatePhoto(
+        photoId,
+        buildUpdatedPhotoPayload(editingTitle, editingUrl, editingThumbnailUrl),
+      )
 
       setPhotos((currentPhotos) =>
         currentPhotos.map((photo) => (photo.id === photoId ? updatedPhoto : photo)),
