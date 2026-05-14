@@ -30,7 +30,7 @@ export function useAuth() {
   function loginUser(nextUser) {
     const sessionUser = login(nextUser)
 
-    setStoredUser(sessionUser)
+    setStoredUser(sessionUser) 
     return sessionUser
   }
 

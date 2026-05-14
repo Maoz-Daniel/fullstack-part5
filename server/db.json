@@ -61,12 +61,6 @@
       "body": "Today was mostly about steady progress rather than dramatic change. Even so, the smaller updates added up to something much more stable by the end of the session."
     },
     {
-      "userId": 6,
-      "id": 11,
-      "title": "When a Simple Plan Works Best",
-      "body": "A simple plan turned out to be the strongest one. Instead of adding layers, I removed extra decisions and let the core idea carry the work on its own."
-    },
-    {
       "userId": 4,
       "id": 12,
       "title": "Observations from a Quiet Evening",
@@ -119,6 +113,48 @@
       "id": 20,
       "title": "Closing the Week with Better Notes",
       "body": "The week ended with clearer notes than it began with. That may not sound dramatic, but better notes usually mean fewer mistakes when the work resumes later."
+    },
+    {
+      "userId": 6,
+      "title": "post 1",
+      "body": "1",
+      "id": 21
+    },
+    {
+      "userId": 6,
+      "title": "post 2",
+      "body": "2",
+      "id": 22
+    },
+    {
+      "userId": 6,
+      "title": "post 3",
+      "body": "3",
+      "id": 23
+    },
+    {
+      "userId": 6,
+      "title": "post 4",
+      "body": "4",
+      "id": 24
+    },
+    {
+      "userId": 6,
+      "title": "post 5",
+      "body": "5",
+      "id": 25
+    },
+    {
+      "userId": 6,
+      "title": "post 6",
+      "body": "6",
+      "id": 26
+    },
+    {
+      "userId": 6,
+      "title": "post 7",
+      "body": "7",
+      "id": 27
     }
   ],
   "comments": [
@@ -331,14 +367,6 @@
       "userId": 4
     },
     {
-      "postId": 11,
-      "id": 27,
-      "name": "Comment note 27",
-      "email": "Francesco.Gleason@nella.us",
-      "body": "That explanation removed the confusion. It keeps the intent readable without adding unnecessary noise.",
-      "userId": 2
-    },
-    {
       "postId": 3,
       "id": 28,
       "name": "Comment note 28",
@@ -411,14 +439,6 @@
       "userId": 5
     },
     {
-      "postId": 11,
-      "id": 37,
-      "name": "Comment note 37",
-      "email": "Shanna@melissa.tv",
-      "body": "This made the page easier to read. It keeps the intent readable without adding unnecessary noise.",
-      "userId": 2
-    },
-    {
       "postId": 2,
       "id": 38,
       "name": "Comment note 38",
@@ -443,12 +463,74 @@
       "userId": 4
     },
     {
-      "postId": 11,
+      "postId": 21,
       "userId": 6,
-      "name": "maoz daniel",
-      "email": "maozmaozmaoz@maoz.com",
-      "body": "hey comment",
+      "username": "maoz",
+      "body": "1",
       "id": 41
+    },
+    {
+      "postId": 21,
+      "userId": 6,
+      "username": "maoz",
+      "body": "2",
+      "id": 42
+    },
+    {
+      "postId": 21,
+      "userId": 6,
+      "username": "maoz",
+      "body": "3",
+      "id": 43
+    },
+    {
+      "postId": 21,
+      "userId": 6,
+      "username": "maoz",
+      "body": "4",
+      "id": 44
+    },
+    {
+      "postId": 21,
+      "userId": 6,
+      "username": "maoz",
+      "body": "5",
+      "id": 45
+    },
+    {
+      "postId": 21,
+      "userId": 6,
+      "username": "maoz",
+      "body": "6",
+      "id": 46
+    },
+    {
+      "postId": 21,
+      "userId": 6,
+      "username": "maoz",
+      "body": "7",
+      "id": 47
+    },
+    {
+      "postId": 21,
+      "userId": 6,
+      "username": "maoz",
+      "body": "8",
+      "id": 48
+    },
+    {
+      "postId": 21,
+      "userId": 6,
+      "username": "maoz",
+      "body": "9",
+      "id": 49
+    },
+    {
+      "postId": 21,
+      "userId": 6,
+      "username": "maoz",
+      "body": "10",
+      "id": 50
     }
   ],
   "albums": [
@@ -538,11 +620,6 @@
       "title": "Scenes from a Weekend Walk"
     },
     {
-      "userId": 6,
-      "id": 18,
-      "title": "A Narrow Street Collection"
-    },
-    {
       "userId": 1,
       "id": 19,
       "title": "Passing Weather Over the Hills"
@@ -616,6 +693,11 @@
       "userId": 6,
       "title": "My Germany Vacation",
       "id": 33
+    },
+    {
+      "userId": 6,
+      "title": "helllo",
+      "id": 34
     }
   ],
   "photos": [
@@ -744,13 +826,6 @@
       "title": "simple textures in concrete",
       "url": "https://picsum.photos/seed/18-simple-textures-in-concrete/600/600",
       "thumbnailUrl": "https://picsum.photos/seed/18-simple-textures-in-concrete/150/150"
-    },
-    {
-      "albumId": 18,
-      "id": 19,
-      "title": "narrow alley perspective",
-      "url": "https://picsum.photos/seed/19-narrow-alley-perspective/600/600",
-      "thumbnailUrl": "https://picsum.photos/seed/19-narrow-alley-perspective/150/150"
     },
     {
       "albumId": 11,
@@ -1174,12 +1249,6 @@
       "userId": 3,
       "id": 33,
       "title": "Review the register step flow",
-      "completed": false
-    },
-    {
-      "userId": 6,
-      "id": 34,
-      "title": "Validate the current search term",
       "completed": false
     },
     {

@@ -6,7 +6,7 @@ function resolveInitialValue(initialValue) { // if the initial val is function- 
 
 export function useLocalStorage(key, initialValue) { //setstorevalue is build in function that update the state, and also cause the component to re-render
   const [storedValue, setStoredValue] = useState(() => { // this cause to run the function only in first render, and not in every render like if we put the code directly in the useState
-    const rawValue = window.localStorage.getItem(key)
+    const rawValue = window.localStorage.getItem(key) // try to get the value from localStorage
 
     if (rawValue !== null) {
       try {

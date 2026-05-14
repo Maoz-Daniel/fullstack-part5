@@ -1,17 +1,30 @@
-import { useState } from 'react'
-import { Link, useLoaderData } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLoaderData, useSearchParams } from 'react-router-dom'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
+import { usePaginatedItems } from '../../hooks/usePaginatedItems.js'
 import {
   createPost,
   deletePost,
+  getPostsBatch,
+  getPostsByUserIdBatch,
   updatePost,
 } from '../../services/postsService.js'
-import { getVisiblePosts } from './helpers.js'
+import { PostsList } from './components/PostsList.jsx'
+import { PostsSidebar } from './components/PostsSidebar.jsx'
+
+function getNormalizedViewMode(value) {
+  return value === 'all' ? 'all' : 'mine'
+}
 
 function PostsPage() {
-  const { user, posts: initialPosts } = useLoaderData()
-  const [posts, setPosts] = useState(initialPosts)
-  const [viewMode, setViewMode] = useState('mine')
-  const [searchTerm, setSearchTerm] = useState('')
+  const { user, posts: initialPosts, nextPage: initialNextPage } = useLoaderData()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { items: posts, setItems: setPosts, nextPage, isLoadingMore, loadMore, replacePage } =
+    usePaginatedItems(initialPosts, initialNextPage)
+  const viewMode = getNormalizedViewMode(searchParams.get('view'))
+  const searchTerm = searchParams.get('q') ?? ''
+  const [loadedViewMode, setLoadedViewMode] = useState('mine')
+  const [isSwitchingMode, setIsSwitchingMode] = useState(false)
   const [selectedPostId, setSelectedPostId] = useState(null)
   const [newTitle, setNewTitle] = useState('')
   const [newBody, setNewBody] = useState('')
@@ -19,8 +32,71 @@ function PostsPage() {
   const [editingTitle, setEditingTitle] = useState('')
   const [editingBody, setEditingBody] = useState('')
   const [error, setError] = useState('')
+  const [pendingDeletePost, setPendingDeletePost] = useState(null)
 
-  const visiblePosts = getVisiblePosts(posts, user.id, viewMode, searchTerm)
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
+  const visiblePosts = normalizedSearchTerm
+    ? posts.filter((post) => `${post.id} ${post.title}`.toLowerCase().includes(normalizedSearchTerm))
+    : posts
+
+  function updatePostsSearchParams(nextViewMode, nextSearchTerm) {
+    const nextParams = new URLSearchParams()
+
+    if (nextViewMode === 'all') {
+      nextParams.set('view', 'all')
+    }
+
+    if (nextSearchTerm.trim()) {
+      nextParams.set('q', nextSearchTerm)
+    }
+
+    setSearchParams(nextParams)
+  }
+
+  useEffect(() => {
+    if (viewMode === loadedViewMode) {
+      return
+    }
+
+    let isCancelled = false
+
+    async function syncPostsForViewMode() {
+      setIsSwitchingMode(true)
+
+      try {
+        const postsPage =
+          viewMode === 'mine'
+            ? await getPostsByUserIdBatch(user.id, 1)
+            : await getPostsBatch(1)
+
+        if (isCancelled) {
+          return
+        }
+
+        replacePage(postsPage)
+        setLoadedViewMode(viewMode)
+        setSelectedPostId(null)
+        setEditingPostId(null)
+        setEditingTitle('')
+        setEditingBody('')
+        setError('')
+      } catch {
+        if (!isCancelled) {
+          setError('Post loading failed.')
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsSwitchingMode(false)
+        }
+      }
+    }
+
+    void syncPostsForViewMode()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [loadedViewMode, replacePage, user.id, viewMode])
 
   async function handleCreatePost(event) {
     event.preventDefault()
@@ -118,6 +194,34 @@ function PostsPage() {
     }
   }
 
+  async function handleChangeViewMode(nextMode) {
+    if (nextMode === viewMode) {
+      return
+    }
+
+    updatePostsSearchParams(nextMode, searchTerm)
+  }
+
+  async function handleLoadMorePosts() {
+    try {
+      await loadMore((page) =>
+        viewMode === 'mine' ? getPostsByUserIdBatch(user.id, page) : getPostsBatch(page),
+      )
+      setError('')
+    } catch {
+      setError('Post loading failed.')
+    }
+  }
+
+  async function handleConfirmDeletePost() {
+    if (!pendingDeletePost) {
+      return
+    }
+
+    await handleDeletePost(pendingDeletePost.id)
+    setPendingDeletePost(null)
+  }
+
   return (
     <section>
       <h1 className="panel__title">Posts</h1>
@@ -126,189 +230,62 @@ function PostsPage() {
       </p>
 
       <div className="posts-layout">
-        <div className="posts-main">
-          <div className="posts-main__header">
-            <div>
-              <p className="posts-main__eyebrow">Reading view</p>
-              <h2 className="posts-main__title">{visiblePosts.length} posts in view</h2>
-            </div>
+        <PostsList
+          visiblePosts={visiblePosts}
+          userId={user.id}
+          viewMode={viewMode}
+          onViewModeChange={handleChangeViewMode}
+          selectedPostId={selectedPostId}
+          editingPostId={editingPostId}
+          editingTitle={editingTitle}
+          editingBody={editingBody}
+          onEditingTitleChange={setEditingTitle}
+          onEditingBodyChange={setEditingBody}
+          onSelectPost={handleSelectPost}
+          onStartEdit={handleStartEdit}
+          onSaveEdit={handleSaveEdit}
+          onCancelEdit={handleCancelEdit}
+          onDeletePost={setPendingDeletePost}
+          nextPage={nextPage}
+          isLoadingMore={isLoadingMore}
+          isSwitchingMode={isSwitchingMode}
+          onLoadMorePosts={handleLoadMorePosts}
+          error={error}
+        />
 
-            <div className="posts-view-toggle" aria-label="Post view mode">
-              <button
-                type="button"
-                className={viewMode === 'mine' ? 'button posts-view-toggle__button posts-view-toggle__button--active' : 'button button--ghost posts-view-toggle__button'}
-                onClick={() => setViewMode('mine')}
-              >
-                My posts
-              </button>
-              <button
-                type="button"
-                className={viewMode === 'all' ? 'button posts-view-toggle__button posts-view-toggle__button--active' : 'button button--ghost posts-view-toggle__button'}
-                onClick={() => setViewMode('all')}
-              >
-                All posts
-              </button>
-            </div>
-          </div>
-
-          {error ? <p className="auth-form__error">{error}</p> : null}
-
-          <div className="posts-list">
-            {visiblePosts.length === 0 ? (
-              <p className="panel__subtitle">No posts match the current view.</p>
-            ) : (
-              visiblePosts.map((post) => {
-                const isOwner = post.userId === user.id
-                const isSelected = selectedPostId === post.id
-
-                return (
-                  <article
-                    key={post.id}
-                    className={isSelected ? 'post-card post-card--selected' : 'post-card'}
-                  >
-                    <div className="post-card__header">
-                      {editingPostId === post.id ? (
-                        <div className="post-card__select">
-                          <p className="post-card__meta">Post #{post.id}</p>
-                          <>
-                            <input
-                              className="auth-form__input"
-                              type="text"
-                              value={editingTitle}
-                              onChange={(event) => setEditingTitle(event.target.value)}
-                            />
-                            <textarea
-                              className="auth-form__input auth-form__textarea"
-                              value={editingBody}
-                              onChange={(event) => setEditingBody(event.target.value)}
-                            />
-                          </>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          className="post-card__select"
-                          onClick={() => handleSelectPost(post.id)}
-                        >
-                          <p className="post-card__meta">Post #{post.id}</p>
-                          <h2 className="post-card__title">{post.title}</h2>
-                        </button>
-                      )}
-
-                      <div className="post-card__actions">
-                        <Link className="button button--ghost" to={`/users/${post.userId}/posts/${post.id}`}>
-                          Open comments
-                        </Link>
-
-                        {isOwner ? (
-                          editingPostId === post.id ? (
-                            <>
-                              <button
-                                type="button"
-                                className="button"
-                                onClick={() => handleSaveEdit(post.id)}
-                              >
-                                Save
-                              </button>
-                              <button
-                                type="button"
-                                className="button button--ghost"
-                                onClick={handleCancelEdit}
-                              >
-                                Cancel
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                className="button button--ghost"
-                                onClick={() => handleStartEdit(post)}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                className="button button--ghost"
-                                onClick={() => handleDeletePost(post.id)}
-                              >
-                                Delete
-                              </button>
-                            </>
-                          )
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {isSelected && editingPostId !== post.id ? (
-                      <p className="post-card__body">{post.body}</p>
-                    ) : null}
-                  </article>
-                )
-              })
-            )}
-          </div>
-        </div>
-
-        <aside className="posts-sidebar">
-          <div className="posts-sidebar__section">
-            <p className="posts-sidebar__eyebrow">Compose</p>
-            <h2 className="posts-sidebar__title">Write and refine</h2>
-            <p className="panel__subtitle">
-              Keep the writing tools nearby while the main column stays focused on the posts themselves.
-            </p>
-          </div>
-
-          <div className="posts-toolbar">
-            <label className="auth-form__field">
-              <span className="auth-form__label">Search</span>
-              <input
-                className="auth-form__input"
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </label>
-          </div>
-
-          <form className="auth-form posts-sidebar__form" onSubmit={handleCreatePost}>
-            <label className="auth-form__field">
-              <span className="auth-form__label">Post title</span>
-              <input
-                className="auth-form__input"
-                type="text"
-                value={newTitle}
-                onChange={(event) => {
-                  setNewTitle(event.target.value)
-                  if (error) {
-                    setError('')
-                  }
-                }}
-              />
-            </label>
-
-            <label className="auth-form__field">
-              <span className="auth-form__label">Post body</span>
-              <textarea
-                className="auth-form__input auth-form__textarea"
-                value={newBody}
-                onChange={(event) => {
-                  setNewBody(event.target.value)
-                  if (error) {
-                    setError('')
-                  }
-                }}
-              />
-            </label>
-
-            <div className="button-row">
-              <button type="submit" className="button">
-                Create post
-              </button>
-            </div>
-          </form>
-        </aside>
+        <PostsSidebar
+          searchTerm={searchTerm}
+          onSearchChange={(value) => updatePostsSearchParams(viewMode, value)}
+          newTitle={newTitle}
+          onNewTitleChange={(value) => {
+            setNewTitle(value)
+            if (error) {
+              setError('')
+            }
+          }}
+          newBody={newBody}
+          onNewBodyChange={(value) => {
+            setNewBody(value)
+            if (error) {
+              setError('')
+            }
+          }}
+          onSubmit={handleCreatePost}
+        />
       </div>
+
+      <ConfirmDialog
+        open={pendingDeletePost !== null}
+        title="Delete this post?"
+        message={
+          pendingDeletePost
+            ? `Post #${pendingDeletePost.id} and its comment view will be removed from your workspace.`
+            : 'This post will be removed from your workspace.'
+        }
+        confirmLabel="Delete post"
+        onConfirm={handleConfirmDeletePost}
+        onCancel={() => setPendingDeletePost(null)}
+      />
     </section>
   )
 }

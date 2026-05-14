@@ -1,5 +1,9 @@
-import { apiClient } from './apiClient.js'
-import { deleteCached, getCached, setCached } from './cacheStore.js'
+import { apiClient } from './core/apiClient.js'
+import { deleteCached, deleteCachedByPrefix, getCached, setCached } from './core/cacheStore.js'
+import { parseNextPage } from './core/pagination.js'
+
+export const POST_BATCH_SIZE = 6
+export const COMMENT_BATCH_SIZE = 6
 
 function normalizePost(post) {
   return {
@@ -18,37 +22,65 @@ function normalizeComment(comment) {
   }
 }
 
-export async function getPosts() {
-  const cacheKey = 'posts:all'
-  const cachedPosts = getCached(cacheKey)
+export async function getPostsBatch(page, perPage = POST_BATCH_SIZE) {
+  const cacheKey = `posts:all:page:${page}`
+  const cachedPostsPage = getCached(cacheKey)
 
-  if (cachedPosts) {
-    return cachedPosts
+  if (cachedPostsPage) {
+    return cachedPostsPage
   }
 
-  const posts = await apiClient('/posts')
-  const normalizedPosts = posts.map(normalizePost)
+  const response = await apiClient(`/posts?_page=${page}&_limit=${perPage}`, 'GET', null, {
+    includeHeaders: true,
+  })
+  const normalizedPostsPage = {
+    data: response.data.map(normalizePost),
+    next: parseNextPage(response.headers),
+  }
 
-  return setCached(cacheKey, normalizedPosts)
+  return setCached(cacheKey, normalizedPostsPage)
+}
+
+export async function getPostsByUserIdBatch(userId, page, perPage = POST_BATCH_SIZE) {
+  const cacheKey = `posts:user:${userId}:page:${page}`
+  const cachedPostsPage = getCached(cacheKey)
+
+  if (cachedPostsPage) {
+    return cachedPostsPage
+  }
+
+  const response = await apiClient(`/posts?userId=${userId}&_page=${page}&_limit=${perPage}`, 'GET', null, {
+    includeHeaders: true,
+  })
+  const normalizedPostsPage = {
+    data: response.data.map(normalizePost),
+    next: parseNextPage(response.headers),
+  }
+
+  return setCached(cacheKey, normalizedPostsPage)
 }
 
 export async function createPost(post) {
   const createdPost = await apiClient('/posts', 'POST', post)
-  deleteCached('posts:all')
+  deleteCachedByPrefix('posts:all:')
+  deleteCachedByPrefix(`posts:user:${post.userId}:`)
   return normalizePost(createdPost)
 }
 
 export async function updatePost(postId, updates) {
   const updatedPost = await apiClient(`/posts/${postId}`, 'PATCH', updates)
-  deleteCached('posts:all')
+  deleteCachedByPrefix('posts:all:')
+  deleteCachedByPrefix(`posts:user:${updatedPost.userId}:`)
   deleteCached(`post:${postId}`)
   return normalizePost(updatedPost)
 }
 
 export async function deletePost(postId) {
-  deleteCached('posts:all')
+  const post = await apiClient(`/posts/${postId}`)
+  deleteCachedByPrefix('posts:all:')
+  deleteCachedByPrefix(`posts:user:${post.userId}:`)
   deleteCached(`post:${postId}`)
-  deleteCached(`comments:post:${postId}`)
+  deleteCachedByPrefix(`comments:post:${postId}:`)
   await apiClient(`/posts/${postId}`, 'DELETE')
 }
 
@@ -66,35 +98,40 @@ export async function getPostById(postId) {
   return setCached(cacheKey, normalizedPost)
 }
 
-export async function getCommentsByPostId(postId) {
-  const cacheKey = `comments:post:${postId}`
-  const cachedComments = getCached(cacheKey)
+export async function getCommentsBatch(postId, page, perPage = COMMENT_BATCH_SIZE) {
+  const cacheKey = `comments:post:${postId}:page:${page}`
+  const cachedCommentsPage = getCached(cacheKey)
 
-  if (cachedComments) {
-    return cachedComments
+  if (cachedCommentsPage) {
+    return cachedCommentsPage
   }
 
-  const comments = await apiClient(`/comments?postId=${postId}`)
-  const normalizedComments = comments.map(normalizeComment)
+  const response = await apiClient(`/comments?postId=${postId}&_page=${page}&_limit=${perPage}`, 'GET', null, {
+    includeHeaders: true,
+  })
+  const normalizedCommentsPage = {
+    data: response.data.map(normalizeComment),
+    next: parseNextPage(response.headers),
+  }
 
-  return setCached(cacheKey, normalizedComments)
+  return setCached(cacheKey, normalizedCommentsPage)
 }
 
 export async function createComment(comment) {
   const createdComment = await apiClient('/comments', 'POST', comment)
-  deleteCached(`comments:post:${comment.postId}`)
+  deleteCachedByPrefix(`comments:post:${comment.postId}:`)
   return normalizeComment(createdComment)
 }
 
 export async function updateComment(commentId, updates) {
   const comment = await apiClient(`/comments/${commentId}`)
   const updatedComment = await apiClient(`/comments/${commentId}`, 'PATCH', updates)
-  deleteCached(`comments:post:${comment.postId}`)
+  deleteCachedByPrefix(`comments:post:${comment.postId}:`)
   return normalizeComment(updatedComment)
 }
 
 export async function deleteComment(commentId) {
   const comment = await apiClient(`/comments/${commentId}`)
   await apiClient(`/comments/${commentId}`, 'DELETE')
-  deleteCached(`comments:post:${comment.postId}`)
+  deleteCachedByPrefix(`comments:post:${comment.postId}:`)
 }

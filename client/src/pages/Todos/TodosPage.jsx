@@ -1,17 +1,23 @@
 import { useState } from 'react'
 import { useLoaderData } from 'react-router-dom'
-import { createTodo, deleteTodo, updateTodo } from '../../services/todosService.js'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
+import { usePaginatedItems } from '../../hooks/usePaginatedItems.js'
+import { createTodo, deleteTodo, getTodosBatch, updateTodo } from '../../services/todosService.js'
+import { TodosList } from './components/TodosList.jsx'
+import { TodosSidebar } from './components/TodosSidebar.jsx'
 import { getVisibleTodos } from './helpers.js'
 
 function TodosPage() {
-  const { user, todos: initialTodos } = useLoaderData() // get the user and the todos from the loader data
-  const [todos, setTodos] = useState(initialTodos)
+  const { user, todos: initialTodos, nextPage: initialNextPage } = useLoaderData() // get the user and the todos from the loader data
+  const { items: todos, setItems: setTodos, nextPage, isLoadingMore, loadMore } =
+    usePaginatedItems(initialTodos, initialNextPage)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('id')
   const [newTitle, setNewTitle] = useState('') // the title of the new todo that is being created
   const [editingTodoId, setEditingTodoId] = useState(null) // the id of the todo that is currently being edited (null if no todo is being edited)
   const [editingTitle, setEditingTitle] = useState('') // the new title of the todo that is being edited
   const [error, setError] = useState('')
+  const [pendingDeleteTodo, setPendingDeleteTodo] = useState(null)
 
   const visibleTodos = getVisibleTodos(todos, searchTerm, sortBy)
 
@@ -91,160 +97,79 @@ function TodosPage() {
     }
   }
 
+  async function handleLoadMoreTodos() {
+    try {
+      await loadMore((page) => getTodosBatch(user.id, page))
+      setError('')
+    } catch {
+      setError('Todo loading failed.')
+    }
+  }
+
+  async function handleConfirmDeleteTodo() {
+    if (!pendingDeleteTodo) {
+      return
+    }
+
+    await handleDeleteTodo(pendingDeleteTodo.id)
+    setPendingDeleteTodo(null)
+  }
+
   return (
     <section>
       <h1 className="panel__title">Todos</h1>
       <p className="panel__subtitle">Manage only the todos that belong to the logged-in user.</p>
 
       <div className="todos-layout">
-        <aside className="todos-sidebar">
-          <div className="todos-sidebar__section">
-            <p className="todos-sidebar__eyebrow">Workspace</p>
-            <h2 className="todos-sidebar__title">Plan the next move</h2>
-            <p className="panel__subtitle">
-              Add a task, filter the list, and keep the main column focused on the work itself.
-            </p>
+        <TodosSidebar
+          newTitle={newTitle}
+          onNewTitleChange={(value) => {
+            setNewTitle(value)
+            if (error) {
+              setError('')
+            }
+          }}
+          onAddTodo={handleAddTodo}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          error={error}
+        />
+
+        <TodosList
+          visibleTodos={visibleTodos}
+          editingTodoId={editingTodoId}
+          editingTitle={editingTitle}
+          onEditingTitleChange={setEditingTitle}
+          onToggleCompleted={handleToggleCompleted}
+          onStartEdit={handleStartEdit}
+          onSaveEdit={handleSaveEdit}
+          onCancelEdit={handleCancelEdit}
+          onDelete={setPendingDeleteTodo}
+        />
+
+        {nextPage ? (
+          <div className="button-row">
+            <button type="button" className="button" onClick={handleLoadMoreTodos} disabled={isLoadingMore}>
+              {isLoadingMore ? 'Loading...' : 'Load more'}
+            </button>
           </div>
-
-          <form className="auth-form todos-sidebar__form" onSubmit={handleAddTodo}>
-            <label className="auth-form__field">
-              <span className="auth-form__label">Add todo</span>
-              <input
-                className="auth-form__input"
-                type="text"
-                name="newTodo"
-                value={newTitle}
-                onChange={(event) => {
-                  setNewTitle(event.target.value)
-                  if (error) {
-                    setError('')
-                  }
-                }}
-              />
-            </label>
-
-            <div className="button-row">
-              <button type="submit" className="button">
-                Create todo
-              </button>
-            </div>
-          </form>
-
-          <div className="todos-toolbar">
-            <label className="auth-form__field">
-              <span className="auth-form__label">Search</span>
-              <input
-                className="auth-form__input"
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </label>
-
-            <label className="auth-form__field">
-              <span className="auth-form__label">Sort by</span>
-              <select
-                className="auth-form__input"
-                value={sortBy}
-                onChange={(event) => setSortBy(event.target.value)}
-              >
-                <option value="id">Id</option>
-                <option value="title">Title</option>
-                <option value="completed">Completed</option>
-              </select>
-            </label>
-          </div>
-
-          {error ? <p className="auth-form__error">{error}</p> : null}
-        </aside>
-
-        <div className="todos-main">
-          <div className="todos-main__header">
-            <div>
-              <p className="todos-main__eyebrow">Your list</p>
-              <h2 className="todos-main__title">{visibleTodos.length} tasks in view</h2>
-            </div>
-          </div>
-
-          <div className="todos-list">
-            {visibleTodos.length === 0 ? (
-              <p className="panel__subtitle">No todos match the current filters.</p>
-            ) : (
-              visibleTodos.map((todo) => (
-                <article key={todo.id} className="todo-card">
-                  <div className="todo-card__header">
-                    <div>
-                      <p className="todo-card__meta">Todo #{todo.id}</p>
-                      {editingTodoId === todo.id ? (
-                        <input
-                          className="auth-form__input"
-                          type="text"
-                          value={editingTitle}
-                          onChange={(event) => setEditingTitle(event.target.value)}
-                        />
-                      ) : (
-                        <h2 className="todo-card__title">{todo.title}</h2>
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      className={todo.completed ? 'button' : 'button button--ghost'}
-                      onClick={() => handleToggleCompleted(todo)}
-                    >
-                      {todo.completed ? 'Completed' : 'Not completed'}
-                    </button>
-                  </div>
-
-                  <dl className="details-list">
-                    <div className="details-list__row">
-                      <dt>Id</dt>
-                      <dd>{todo.id}</dd>
-                    </div>
-                    <div className="details-list__row">
-                      <dt>State</dt>
-                      <dd>{todo.completed ? 'Completed' : 'Not completed'}</dd>
-                    </div>
-                  </dl>
-
-                  <div className="button-row">
-                    {editingTodoId === todo.id ? (
-                      <>
-                        <button
-                          type="button"
-                          className="button"
-                          onClick={() => handleSaveEdit(todo.id)}
-                        >
-                          Save
-                        </button>
-                        <button type="button" className="button button--ghost" onClick={handleCancelEdit}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        type="button"
-                        className="button button--ghost"
-                        onClick={() => handleStartEdit(todo)}
-                      >
-                        Edit title
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      className="button button--ghost"
-                      onClick={() => handleDeleteTodo(todo.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </div>
+        ) : null}
       </div>
+
+      <ConfirmDialog
+        open={pendingDeleteTodo !== null}
+        title="Delete this todo?"
+        message={
+          pendingDeleteTodo
+            ? `Todo #${pendingDeleteTodo.id} will be removed from your list.`
+            : 'This todo will be removed from your list.'
+        }
+        confirmLabel="Delete todo"
+        onConfirm={handleConfirmDeleteTodo}
+        onCancel={() => setPendingDeleteTodo(null)}
+      />
     </section>
   )
 }

@@ -16,7 +16,7 @@ export async function apiClient(path, method = 'GET', body = null, config = {}) 
     const response = await fetch(buildUrl(path), options)
 
     if (!response.ok) {
-      throw new Error(`${method} ${path} failed: ${response.status}`)
+      throw new Error(`API request failed: ${method} ${path} returned ${response.status} ${response.statusText}`)
     }
 
     const data = method === 'DELETE' ? null : await response.json()
@@ -27,7 +27,7 @@ export async function apiClient(path, method = 'GET', body = null, config = {}) 
 
     return data
   } catch (error) {
-    console.error('API error:', error)
+    console.error(`API error during ${method} ${path}:`, error)
     throw error
   }
 }

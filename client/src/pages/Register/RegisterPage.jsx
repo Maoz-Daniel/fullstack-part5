@@ -77,19 +77,8 @@ function RegisterPage() {
       <div className="panel__eyebrow">Create your account</div>
       <h1 className="panel__title">Register</h1>
       <p className="panel__subtitle">
-        Create a new user in two steps, then open a session and continue to /home.
+        Create a new user in two steps, then open a session and continue to home.
       </p>
-
-      <dl className="details-list">
-        <div className="details-list__row">
-          <dt>Path</dt>
-          <dd>/register</dd>
-        </div>
-        <div className="details-list__row">
-          <dt>Step</dt>
-          <dd>{step === 1 ? 'Account details' : 'Profile details'}</dd>
-        </div>
-      </dl>
 
       {step === 1 ? (
         <form className="auth-form" onSubmit={handleAccountStepSubmit}>
@@ -133,7 +122,7 @@ function RegisterPage() {
               Continue
             </button>
             <Link className="button button--ghost" to="/login">
-              Go to /login
+              Go to login
             </Link>
           </div>
         </form>

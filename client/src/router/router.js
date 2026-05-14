@@ -1,23 +1,15 @@
 import { createElement } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
-import { AlbumPhotosPage } from '../pages/AlbumPhotos/AlbumPhotosPage.jsx'
 import { AlbumsPage } from '../pages/Albums/AlbumsPage.jsx'
+import { AlbumPhotosPage } from '../pages/Albums/AlbumPhotosPage/AlbumPhotosPage.jsx'
 import { HomePage } from '../pages/Home/HomePage.jsx'
 import { LoginPage } from '../pages/Login/LoginPage.jsx'
-import { PostDetailsPage } from '../pages/PostDetails/PostDetailsPage.jsx'
 import { PostsPage } from '../pages/Posts/PostsPage.jsx'
+import { PostDetailsPage } from '../pages/Posts/PostDetailsPage/PostDetailsPage.jsx'
 import { RegisterPage } from '../pages/Register/RegisterPage.jsx'
 import { TodosPage } from '../pages/Todos/TodosPage.jsx'
-import {
-  albumPhotosLoader,
-  albumsLoader,
-  authLandingLoader,
-  postDetailsLoader,
-  postsLoader,
-  publicOnlyLoader,
-  requireAuthLoader,
-  todosLoader,
-} from './loaders.js'
+import {albumPhotosLoader,albumsLoader,authLandingLoader,postDetailsLoader,postsLoader,
+publicOnlyLoader,requireAuthLoader,todosLoader,} from './loaders.js'
 import { ProtectedLayout } from './ProtectedLayout.jsx'
 import { RootLayout } from './RootLayout.jsx'
 import { RouteErrorPage } from './RouteErrorPage.jsx'
@@ -47,7 +39,7 @@ export const router = createBrowserRouter([
       },
       {
         id: 'protected',
-        loader: requireAuthLoader,
+        loader: requireAuthLoader, //run on all children routes
         element: createElement(ProtectedLayout),
         children: [
           {

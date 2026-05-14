@@ -1,16 +1,17 @@
 import { redirect } from 'react-router-dom'
 import { getUser, isAuthenticated } from '../hooks/useAuth.js'
+import { getUsers } from '../services/authService.js'
 import {
   getAlbumById,
   getAlbumPhotosBatch,
-  getAlbumsByUserId,
+  getAlbumsBatch,
 } from '../services/albumsService.js'
 import {
-  getCommentsByPostId,
+  getCommentsBatch,
   getPostById,
-  getPosts,
+  getPostsByUserIdBatch,
 } from '../services/postsService.js'
-import { getTodosByUserId } from '../services/todosService.js'
+import { getTodosBatch } from '../services/todosService.js'
 
 export function authLandingLoader() {
   return redirect(isAuthenticated() ? '/home' : '/login')
@@ -42,11 +43,23 @@ export function requireMatchingUserLoader({ params }) {
     return redirect('/login')
   }
 
-  if (!Number.isFinite(routeUserId) || routeUserId !== user.id) {
+  if (routeUserId !== user.id) {
     return redirect('/home')
   }
 
   return user
+}
+
+// for each comment, find the user that made it and add a username property to the comment object
+function enrichCommentsWithUsername(comments, users) {
+  const usersById = new Map(users.map((currentUser) => [currentUser.id, currentUser])) // Map { 1 => {id: 1, username: 'user1', ..}, 2 => {...}, .. }
+
+  return comments.map((comment) => ({
+    ...comment,
+    username: usersById.get(comment.userId)?.username ?? `user${comment.userId}`,
+    
+    // finally, we have a comment object like this: { id: 1, postId: 1, userId: 1, body: '...', username: 'user1' }
+  }))
 }
 
 export async function todosLoader() {
@@ -56,9 +69,21 @@ export async function todosLoader() {
     return redirect('/login')
   }
 
-  const todos = await getTodosByUserId(user.id)
+  if (!Number.isFinite(user.id)) {
+    return redirect('/home')
+  }
+  
+  try {
+    const todosPage = await getTodosBatch(user.id, 1)
 
-  return { user, todos }
+    return {
+      user,
+      todos: todosPage.data,
+      nextPage: todosPage.next,
+    }
+  } catch {
+    throw new Error('Failed to load todos.')
+  }
 }
 
 export async function postsLoader() {
@@ -68,9 +93,21 @@ export async function postsLoader() {
     return redirect('/login')
   }
 
-  const posts = await getPosts()
+  if (!Number.isFinite(user.id)) {
+    return redirect('/home')
+  }
 
-  return { user, posts }
+  try {
+    const postsPage = await getPostsByUserIdBatch(user.id, 1)
+
+    return {
+      user,
+      posts: postsPage.data,
+      nextPage: postsPage.next,
+    }
+  } catch {
+    throw new Error('Failed to load posts.')
+  }
 }
 
 export async function postDetailsLoader({ params }) {
@@ -82,19 +119,28 @@ export async function postDetailsLoader({ params }) {
     return redirect('/login')
   }
 
-  if (!Number.isFinite(routePostId) || !Number.isFinite(routeUserId)) {
-    return redirect('/posts')
+  try {
+    const post = await getPostById(routePostId)
+
+    if (post.userId !== routeUserId) { // if the url params userId doesn't match the post's userId
+      return redirect('/posts')
+    }
+
+    const [commentsPage, users] = await Promise.all([
+      getCommentsBatch(routePostId, 1),
+      getUsers(),
+    ])
+    const commentsWithUsername = enrichCommentsWithUsername(commentsPage.data, users)
+
+    return {
+      user,
+      post,
+      comments: commentsWithUsername,
+      nextPage: commentsPage.next,
+    }
+  } catch {
+    throw new Error('Failed to load post details.')
   }
-
-  const post = await getPostById(routePostId)
-
-  if (post.userId !== routeUserId) {
-    return redirect('/posts')
-  }
-
-  const comments = await getCommentsByPostId(routePostId)
-
-  return { user, post, comments }
 }
 
 export async function albumsLoader() {
@@ -104,9 +150,21 @@ export async function albumsLoader() {
     return redirect('/login')
   }
 
-  const albums = await getAlbumsByUserId(user.id)
+  if (!Number.isFinite(user.id)) {
+    return redirect('/home')
+  }
 
-  return { user, albums }
+  try {
+    const albumsPage = await getAlbumsBatch(user.id, 1)
+
+    return {
+      user,
+      albums: albumsPage.data,
+      nextPage: albumsPage.next,
+    }
+  } catch {
+    throw new Error('Failed to load albums.')
+  }
 }
 
 export async function albumPhotosLoader({ params }) {
@@ -118,26 +176,30 @@ export async function albumPhotosLoader({ params }) {
     return redirect('/login')
   }
 
-  if (!Number.isFinite(routeUserId) || routeUserId !== user.id) {
+  if (routeUserId !== user.id) { // if the user is trying to access an album that doesn't belong to them
     return redirect('/albums')
   }
 
-  if (!Number.isFinite(routeAlbumId)) {
+  if (!Number.isFinite(routeAlbumId)) { 
     return redirect('/albums')
   }
 
-  const album = await getAlbumById(routeAlbumId)
+  try {
+    const album = await getAlbumById(routeAlbumId)
 
-  if (album.userId !== user.id) {
-    return redirect('/albums')
-  }
+    if (album.userId !== user.id) {
+      return redirect('/albums')
+    }
 
-  const photosPage = await getAlbumPhotosBatch(album.id, 1)
+    const photosPage = await getAlbumPhotosBatch(album.id, 1)
 
-  return {
-    user,
-    album,
-    photos: photosPage.data,
-    nextPage: photosPage.next,
+    return {
+      user,
+      album,
+      photos: photosPage.data,
+      nextPage: photosPage.next,
+    }
+  } catch {
+    throw new Error('Failed to load album photos.')
   }
 }

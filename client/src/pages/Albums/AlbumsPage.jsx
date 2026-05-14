@@ -1,14 +1,20 @@
 import { useState } from 'react'
-import { Link, useLoaderData } from 'react-router-dom'
-import { createAlbum } from '../../services/albumsService.js'
+import { useLoaderData } from 'react-router-dom'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
+import { usePaginatedItems } from '../../hooks/usePaginatedItems.js'
+import { createAlbum, deleteAlbum, getAlbumsBatch } from '../../services/albumsService.js'
+import { AlbumsHero } from './components/AlbumsHero.jsx'
+import { AlbumsList } from './components/AlbumsList.jsx'
 import { getVisibleAlbums } from './helpers.js'
 
 function AlbumsPage() {
-  const { user, albums: initialAlbums } = useLoaderData()
-  const [albums, setAlbums] = useState(initialAlbums)
+  const { user, albums: initialAlbums, nextPage: initialNextPage } = useLoaderData()
+  const { items: albums, setItems: setAlbums, nextPage, isLoadingMore, loadMore } =
+    usePaginatedItems(initialAlbums, initialNextPage)
   const [searchTerm, setSearchTerm] = useState('')
   const [newTitle, setNewTitle] = useState('')
   const [error, setError] = useState('')
+  const [pendingDeleteAlbum, setPendingDeleteAlbum] = useState(null)
 
   const visibleAlbums = getVisibleAlbums(albums, searchTerm)
 
@@ -34,6 +40,34 @@ function AlbumsPage() {
     }
   }
 
+  async function handleLoadMore() {
+    try {
+      await loadMore((page) => getAlbumsBatch(user.id, page))
+      setError('')
+    } catch {
+      setError('Album loading failed.')
+    }
+  }
+
+  async function handleDeleteAlbum(albumId) {
+    try {
+      await deleteAlbum(albumId)
+      setAlbums((currentAlbums) => currentAlbums.filter((album) => album.id !== albumId))
+      setError('')
+    } catch {
+      setError('Album deletion failed.')
+    }
+  }
+
+  async function handleConfirmDeleteAlbum() {
+    if (!pendingDeleteAlbum) {
+      return
+    }
+
+    await handleDeleteAlbum(pendingDeleteAlbum.id)
+    setPendingDeleteAlbum(null)
+  }
+
   return (
     <section>
       <h1 className="panel__title">Albums</h1>
@@ -42,87 +76,45 @@ function AlbumsPage() {
       </p>
 
       <div className="albums-layout">
-        <div className="albums-hero">
-          <div className="albums-hero__copy">
-            <p className="albums-hero__eyebrow">Collection view</p>
-            <h2 className="albums-hero__title">{visibleAlbums.length} albums ready to open</h2>
-            <p className="panel__subtitle">
-              The gallery stays front and center while the curation tools sit quietly just above it.
-            </p>
-          </div>
-
-          <div className="albums-hero__panel">
-            <label className="auth-form__field albums-hero__field">
-              <span className="auth-form__label">Search</span>
-              <input
-                className="auth-form__input"
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </label>
-
-            <form className="auth-form albums-hero__form" onSubmit={handleCreateAlbum}>
-              <label className="auth-form__field albums-hero__field">
-                <span className="auth-form__label">Add album</span>
-                <input
-                  className="auth-form__input"
-                  type="text"
-                  value={newTitle}
-                  onChange={(event) => {
-                    setNewTitle(event.target.value)
-                    if (error) {
-                      setError('')
-                    }
-                  }}
-                />
-              </label>
-
-              <div className="button-row albums-hero__actions">
-                <button type="submit" className="button">
-                  Create album
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <AlbumsHero
+          visibleCount={visibleAlbums.length}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          newTitle={newTitle}
+          onNewTitleChange={(value) => {
+            setNewTitle(value)
+            if (error) {
+              setError('')
+            }
+          }}
+          onSubmit={handleCreateAlbum}
+        />
 
         {error ? <p className="auth-form__error">{error}</p> : null}
 
-        <div className="albums-list">
-          {visibleAlbums.length === 0 ? (
-            <p className="panel__subtitle">No albums match the current search.</p>
-          ) : (
-            visibleAlbums.map((album) => (
-              <article key={album.id} className="album-card">
-                <div className="album-card__cover">
-                  <div className="album-card__shine" />
-                  <p className="album-card__meta">Album #{album.id}</p>
-                  <h2 className="album-card__title">{album.title}</h2>
-                  <p className="album-card__subtitle">A saved collection ready to open and manage.</p>
-                </div>
+        <AlbumsList albums={visibleAlbums} onDelete={setPendingDeleteAlbum} />
 
-                <div className="album-card__footer">
-                  <div className="album-card__stack" aria-hidden="true">
-                    <span className="album-card__stack-layer album-card__stack-layer--back" />
-                    <span className="album-card__stack-layer album-card__stack-layer--mid" />
-                    <span className="album-card__stack-layer album-card__stack-layer--front" />
-                  </div>
-
-                  <div className="album-card__actions">
-                    <Link
-                      className="button button--ghost"
-                      to={`/users/${album.userId}/albums/${album.id}/photos`}
-                    >
-                      Open photos
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
+        {nextPage ? (
+          <div className="button-row">
+            <button type="button" className="button" onClick={handleLoadMore} disabled={isLoadingMore}>
+              {isLoadingMore ? 'Loading...' : 'Load more'}
+            </button>
+          </div>
+        ) : null}
       </div>
+
+      <ConfirmDialog
+        open={pendingDeleteAlbum !== null}
+        title="Delete this album?"
+        message={
+          pendingDeleteAlbum
+            ? `Album #${pendingDeleteAlbum.id} and its photos will be removed from your workspace.`
+            : 'This album and its photos will be removed from your workspace.'
+        }
+        confirmLabel="Delete album"
+        onConfirm={handleConfirmDeleteAlbum}
+        onCancel={() => setPendingDeleteAlbum(null)}
+      />
     </section>
   )
 }

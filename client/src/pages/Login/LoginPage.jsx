@@ -84,7 +84,7 @@ function LoginPage() {
             Login
           </button>
           <Link className="button button--ghost" to="/register">
-            Go to /register
+            Go to register
           </Link>
         </div>
       </form>

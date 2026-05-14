@@ -7,7 +7,7 @@ function ProtectedLayout() {
   return (
     <section className="panel">
       <ProtectedNavigation />
-      <Outlet context={user} />
+      <Outlet context={user} /> {/* make the user object available to all child routes */}
     </section>
   )
 }
