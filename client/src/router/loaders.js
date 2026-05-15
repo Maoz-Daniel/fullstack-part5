@@ -13,6 +13,16 @@ import {
 } from '../services/postsService.js'
 import { getTodosBatch } from '../services/todosService.js'
 
+function requireAuthenticatedUser() {
+  const user = getUser()
+
+  if (!user) {
+    throw redirect('/login')
+  }
+
+  return user
+}
+
 export function authLandingLoader() {
   return redirect(isAuthenticated() ? '/home' : '/login')
 }
@@ -26,22 +36,12 @@ export function publicOnlyLoader() {
 }
 
 export function requireAuthLoader() {
-  const user = getUser()
-
-  if (!user) {
-    return redirect('/login')
-  }
-
-  return user
+  return requireAuthenticatedUser()
 }
 
 export function requireMatchingUserLoader({ params }) {
-  const user = getUser()
+  const user = requireAuthenticatedUser()
   const routeUserId = Number(params.userId)
-
-  if (!user) {
-    return redirect('/login')
-  }
 
   if (routeUserId !== user.id) {
     return redirect('/home')
@@ -63,16 +63,12 @@ function enrichCommentsWithUsername(comments, users) {
 }
 
 export async function todosLoader() {
-  const user = getUser()
-
-  if (!user) {
-    return redirect('/login')
-  }
+  const user = requireAuthenticatedUser()
 
   if (!Number.isFinite(user.id)) {
     return redirect('/home')
   }
-  
+
   try {
     const todosPage = await getTodosBatch(user.id, 1)
 
@@ -87,11 +83,7 @@ export async function todosLoader() {
 }
 
 export async function postsLoader() {
-  const user = getUser()
-
-  if (!user) {
-    return redirect('/login')
-  }
+  const user = requireAuthenticatedUser()
 
   if (!Number.isFinite(user.id)) {
     return redirect('/home')
@@ -111,20 +103,20 @@ export async function postsLoader() {
 }
 
 export async function postDetailsLoader({ params }) {
-  const user = getUser()
+  const user = requireAuthenticatedUser()
   const routePostId = Number(params.postId)
   const routeUserId = Number(params.userId)
 
-  if (!user) {
-    return redirect('/login')
+  if (!Number.isFinite(routePostId) || !Number.isFinite(routeUserId)) {
+    return redirect('/posts')
+  }
+
+  if (routeUserId !== user.id) { // if the user is trying to access a post that doesn't belong to them
+    return redirect('/posts')
   }
 
   try {
     const post = await getPostById(routePostId)
-
-    if (post.userId !== routeUserId) { // if the url params userId doesn't match the post's userId
-      return redirect('/posts')
-    }
 
     const [commentsPage, users] = await Promise.all([
       getCommentsBatch(routePostId, 1),
@@ -144,11 +136,7 @@ export async function postDetailsLoader({ params }) {
 }
 
 export async function albumsLoader() {
-  const user = getUser()
-
-  if (!user) {
-    return redirect('/login')
-  }
+  const user = requireAuthenticatedUser()
 
   if (!Number.isFinite(user.id)) {
     return redirect('/home')
@@ -168,13 +156,9 @@ export async function albumsLoader() {
 }
 
 export async function albumPhotosLoader({ params }) {
-  const user = getUser()
+  const user = requireAuthenticatedUser()
   const routeUserId = Number(params.userId)
   const routeAlbumId = Number(params.albumId)
-
-  if (!user) {
-    return redirect('/login')
-  }
 
   if (routeUserId !== user.id) { // if the user is trying to access an album that doesn't belong to them
     return redirect('/albums')
@@ -187,7 +171,7 @@ export async function albumPhotosLoader({ params }) {
   try {
     const album = await getAlbumById(routeAlbumId)
 
-    if (album.userId !== user.id) {
+    if (album.userId !== user.id) { // if the album doesn't belong to the user, redirect to albums page
       return redirect('/albums')
     }
 

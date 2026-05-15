@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 
 function PostCard({
   post,
+  currentUserId,
   isOwner,
   isSelected,
   isEditing,
@@ -43,7 +44,7 @@ function PostCard({
         )}
 
         <div className="post-card__actions">
-          <Link className="button button--ghost" to={`/users/${post.userId}/posts/${post.id}`}>
+          <Link className="button button--ghost" to={`/users/${currentUserId}/posts/${post.id}`}>
             Open comments
           </Link>
 

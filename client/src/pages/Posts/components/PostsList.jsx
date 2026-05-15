@@ -44,6 +44,7 @@ function PostsList({
             <PostCard
               key={post.id}
               post={post}
+              currentUserId={userId}
               isOwner={post.userId === userId}
               isSelected={selectedPostId === post.id}
               isEditing={editingPostId === post.id}
