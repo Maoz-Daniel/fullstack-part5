@@ -531,6 +531,13 @@
       "username": "maoz",
       "body": "10",
       "id": 50
+    },
+    {
+      "postId": 26,
+      "userId": 6,
+      "username": "maoz",
+      "body": "helloll",
+      "id": 51
     }
   ],
   "albums": [
@@ -819,13 +826,6 @@
       "title": "passing traffic in rain",
       "url": "https://picsum.photos/seed/17-passing-traffic-in-rain/600/600",
       "thumbnailUrl": "https://picsum.photos/seed/17-passing-traffic-in-rain/150/150"
-    },
-    {
-      "albumId": 10,
-      "id": 18,
-      "title": "simple textures in concrete",
-      "url": "https://picsum.photos/seed/18-simple-textures-in-concrete/600/600",
-      "thumbnailUrl": "https://picsum.photos/seed/18-simple-textures-in-concrete/150/150"
     },
     {
       "albumId": 11,
@@ -1315,7 +1315,7 @@
       "userId": 6,
       "id": 45,
       "title": "Refactor the repeated filter code",
-      "completed": false
+      "completed": true
     },
     {
       "userId": 5,
@@ -1356,8 +1356,20 @@
     {
       "userId": 6,
       "title": "hello",
-      "completed": false,
+      "completed": true,
       "id": 52
+    },
+    {
+      "userId": 6,
+      "title": "new todo",
+      "completed": true,
+      "id": 53
+    },
+    {
+      "userId": 6,
+      "title": "new todo",
+      "completed": true,
+      "id": 54
     }
   ],
   "users": [
